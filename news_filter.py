@@ -2,12 +2,11 @@ import re
 
 
 # =========================================================
-# STRONG AI KEYWORDS
+# AI TOPICS
 # =========================================================
 
 AI_KEYWORDS = [
     "artificial intelligence",
-    "artificial intelligence model",
     "generative ai",
     "machine learning",
     "deep learning",
@@ -27,13 +26,11 @@ AI_KEYWORDS = [
     "video generation",
     "text-to-image",
     "text-to-video",
-    "open source ai",
-    "open-source ai",
 ]
 
 
 # =========================================================
-# IMPORTANT AI PRODUCTS / MODELS
+# AI MODELS / PRODUCTS
 # =========================================================
 
 AI_PRODUCTS = [
@@ -56,40 +53,51 @@ AI_PRODUCTS = [
     "runway",
     "cursor",
     "windsurf",
-    "lovable",
     "replit",
+    "gemma",
+    "phi",
+    "kimi",
+    "glm",
 ]
 
 
 # =========================================================
-# HIGH VALUE NEWS
+# VERY IMPORTANT AI EVENTS
 # =========================================================
 
-HIGH_VALUE_KEYWORDS = [
+NEW_MODEL_KEYWORDS = [
     "new model",
     "new ai model",
-    "new version",
-    "new release",
-    "released",
-    "release",
+    "new llm",
+    "new language model",
+    "new foundation model",
+    "introducing",
+    "introduced",
     "launch",
     "launched",
-    "introducing",
+    "release",
+    "released",
     "available now",
     "now available",
-    "major update",
-    "important update",
+]
+
+
+NEW_FEATURE_KEYWORDS = [
     "new feature",
+    "new capability",
     "new capabilities",
+    "major update",
+    "major upgrade",
     "model update",
-    "ai tool",
-    "ai platform",
-    "ai service",
+    "important update",
+    "version",
+    "upgraded",
+    "upgrade",
 ]
 
 
 # =========================================================
-# FREE AI KEYWORDS
+# FREE AI
 # =========================================================
 
 FREE_KEYWORDS = [
@@ -101,12 +109,7 @@ FREE_KEYWORDS = [
     "free users",
     "free to use",
     "available for free",
-    "without paying",
     "no cost",
-    "no payment",
-    "open source",
-    "open-source",
-    "open weights",
     "free credits",
     "free usage",
     "free api",
@@ -115,10 +118,46 @@ FREE_KEYWORDS = [
 
 
 # =========================================================
-# LOW VALUE / REJECT
+# OPEN SOURCE / OPEN WEIGHTS
+# =========================================================
+
+OPEN_KEYWORDS = [
+    "open source",
+    "open-source",
+    "open source ai",
+    "open-source ai",
+    "open weights",
+    "open-weight",
+    "open model",
+    "weights released",
+    "model weights",
+    "download the model",
+    "self-host",
+    "self hosted",
+]
+
+
+# =========================================================
+# REJECT LOW-VALUE CONTENT
 # =========================================================
 
 REJECT_KEYWORDS = [
+    "marketing campaign",
+    "advertising campaign",
+    "ads campaign",
+    "marketing",
+    "sponsorship",
+    "sponsored",
+    "partnership",
+    "football",
+    "soccer",
+    "sports",
+    "home decor",
+    "shopping",
+    "fashion",
+    "car",
+    "automotive",
+    "phone partnership",
     "politics",
     "political",
     "election",
@@ -126,27 +165,14 @@ REJECT_KEYWORDS = [
     "military",
     "russia",
     "ukraine",
-    "israel",
-    "iran",
     "influence campaign",
-    "cyberattack",
+    "covert influence",
     "malicious campaign",
+    "cyberattack",
     "security incident",
-    "marketing",
-    "advertising",
-    "ads campaign",
-    "football",
-    "soccer",
-    "sports",
-    "partnership",
-    "sponsorship",
-    "home decor",
-    "shopping",
-    "fashion",
-    "automotive",
-    "car",
-    "phone",
-    "pixel",
+    "customer story",
+    "case study",
+    "cuts launch hours",
 ]
 
 
@@ -175,68 +201,6 @@ def contains_any(text, keywords):
     )
 
 
-def is_strong_ai_news(item):
-
-    title = clean_text(
-        item.get("title", "")
-    )
-
-    summary = clean_text(
-        item.get("summary", "")
-    )
-
-    text = f"{title} {summary}"
-
-    # -----------------------------------------------------
-    # Reject clearly irrelevant news
-    # -----------------------------------------------------
-
-    if contains_any(
-        text,
-        REJECT_KEYWORDS
-    ):
-        return False
-
-    # -----------------------------------------------------
-    # Must contain a real AI topic
-    # -----------------------------------------------------
-
-    has_ai_topic = contains_any(
-        text,
-        AI_KEYWORDS
-    )
-
-    has_ai_product = contains_any(
-        text,
-        AI_PRODUCTS
-    )
-
-    if not has_ai_topic and not has_ai_product:
-        return False
-
-    # -----------------------------------------------------
-    # Must be a meaningful AI update
-    # -----------------------------------------------------
-
-    has_important_update = contains_any(
-        text,
-        HIGH_VALUE_KEYWORDS
-    )
-
-    has_free_signal = contains_any(
-        text,
-        FREE_KEYWORDS
-    )
-
-    # Accept:
-    # 1. Important AI release/update
-    # 2. Free AI announcement
-    if not has_important_update and not has_free_signal:
-        return False
-
-    return True
-
-
 def calculate_score(item):
 
     title = clean_text(
@@ -251,25 +215,43 @@ def calculate_score(item):
 
     score = 0
 
-    # AI topic
-    for keyword in AI_KEYWORDS:
-        if keyword in text:
-            score += 2
+    # -----------------------------------------------------
+    # Basic AI relevance
+    # -----------------------------------------------------
 
-    # Known AI product/model
-    for keyword in AI_PRODUCTS:
-        if keyword in text:
-            score += 3
+    if contains_any(text, AI_KEYWORDS):
+        score += 3
 
-    # Important update
-    for keyword in HIGH_VALUE_KEYWORDS:
-        if keyword in text:
-            score += 4
+    if contains_any(text, AI_PRODUCTS):
+        score += 3
 
-    # FREE = very important for our channel
-    for keyword in FREE_KEYWORDS:
-        if keyword in text:
-            score += 8
+    # -----------------------------------------------------
+    # New model = very important
+    # -----------------------------------------------------
+
+    if contains_any(text, NEW_MODEL_KEYWORDS):
+        score += 8
+
+    # -----------------------------------------------------
+    # New feature / major update
+    # -----------------------------------------------------
+
+    if contains_any(text, NEW_FEATURE_KEYWORDS):
+        score += 6
+
+    # -----------------------------------------------------
+    # FREE AI = highest priority
+    # -----------------------------------------------------
+
+    if contains_any(text, FREE_KEYWORDS):
+        score += 10
+
+    # -----------------------------------------------------
+    # OPEN SOURCE / OPEN WEIGHTS
+    # -----------------------------------------------------
+
+    if contains_any(text, OPEN_KEYWORDS):
+        score += 9
 
     return score
 
@@ -280,14 +262,55 @@ def filter_news(news):
 
     for item in news:
 
-        if not is_strong_ai_news(item):
+        title = clean_text(
+            item.get("title", "")
+        )
+
+        summary = clean_text(
+            item.get("summary", "")
+        )
+
+        text = f"{title} {summary}"
+
+        # -------------------------------------------------
+        # Reject obviously bad content
+        # -------------------------------------------------
+
+        if contains_any(
+            text,
+            REJECT_KEYWORDS
+        ):
             continue
+
+        # -------------------------------------------------
+        # Must actually be AI related
+        # -------------------------------------------------
+
+        has_ai = (
+            contains_any(text, AI_KEYWORDS)
+            or
+            contains_any(text, AI_PRODUCTS)
+        )
+
+        if not has_ai:
+            continue
+
+        # -------------------------------------------------
+        # Calculate score
+        # -------------------------------------------------
 
         item["score"] = calculate_score(item)
 
+        # -------------------------------------------------
+        # Minimum quality threshold
+        # -------------------------------------------------
+
+        if item["score"] < 8:
+            continue
+
         filtered.append(item)
 
-    # Highest-value news first
+    # Highest value first
     filtered.sort(
         key=lambda item: item["score"],
         reverse=True
