@@ -1,12 +1,15 @@
 import json
 import os
 
-from openai import OpenAI
+from google import genai
 
 
-client = OpenAI(
-    api_key=os.environ.get("OPENAI_API_KEY")
+client = genai.Client(
+    api_key=os.environ.get("GEMINI_API_KEY")
 )
+
+
+MODEL = "gemini-2.5-flash"
 
 
 def judge_news(item):
@@ -17,38 +20,64 @@ def judge_news(item):
     link = item.get("link", "")
 
     prompt = f"""
-You are the final editor of an AI news Telegram channel.
+You are the final editor of a Telegram channel about AI news.
 
-Your job is to decide whether this news article is worth publishing.
+Your job is to decide whether this article is worth publishing.
 
 CHANNEL FOCUS:
-- New AI models
-- New AI tools
-- Important AI features
-- Free AI tools
+
+1. New AI models
+2. New AI tools
+3. Important AI features
+4. Free AI tools
+5. Free AI plans
+6. Free tiers
+7. Open-source AI
+8. Open-weight AI models
+9. Important AI updates
+10. Useful AI tools for ordinary users
+
+VERY IMPORTANT:
+
+The channel strongly prefers FREE AI.
+
+Give high priority to:
+- Completely free AI tools
 - Free AI plans
 - Free tiers
+- Free API access
+- Free credits
 - Open-source AI
-- Open-weight AI models
-- Important AI updates
+- Open-weight AI
+- AI models that users can download
+- New AI models
+- Major new AI capabilities
 
 REJECT:
+
 - Marketing case studies
 - Ordinary company announcements
+- Advertising
+- Sponsorships
+- Partnerships without important AI news
 - Sports
 - Politics
 - General technology news
-- Partnerships without important AI news
-- Advertising
 - Corporate promotion
-- Security/political incidents unless they introduce an important AI product/model
-- News that is not genuinely useful to AI users
+- Customer stories
+- News that only mentions an AI product
+- News that is not useful to AI users
+- Duplicate or insignificant updates
 
 IMPORTANT:
-Do not approve an article just because it mentions ChatGPT, Gemini,
-Claude or another AI product.
 
-The article must contain meaningful and useful AI news.
+Do NOT approve an article simply because it contains
+words such as GPT, Gemini, Claude or AI.
+
+Understand the actual meaning of the article.
+
+The article must contain genuinely useful and newsworthy
+information about AI.
 
 ARTICLE:
 
@@ -64,44 +93,84 @@ Summary:
 Link:
 {link}
 
-Return ONLY valid JSON:
+Return ONLY valid JSON.
+
+Required format:
 
 {{
   "publish": true,
   "score": 0,
-  "reason": "short reason"
+  "category": "free_ai",
+  "reason": "short explanation"
 }}
 
-Score from 0 to 100.
+SCORING:
 
-Publishing rules:
-- 80-100 = excellent AI news
-- 65-79 = good AI news
-- 50-64 = borderline
-- below 50 = reject
+90-100 = extremely valuable
+80-89 = excellent
+70-79 = good
+60-69 = borderline
+0-59 = reject
 
-Give especially high scores to:
-- New AI models
-- Free AI
-- Free tiers
-- Open-source AI
-- Open-weight models
-- Major new AI capabilities
+Scoring priorities:
+
+New free AI model:
++ very high
+
+New free AI tool:
++ very high
+
+Free tier:
++ very high
+
+Open-source model:
++ very high
+
+Open-weight model:
++ very high
+
+New AI model:
++ high
+
+Major AI capability:
++ high
+
+Normal AI update:
++ medium
+
+Marketing/case study:
+- very high
+
+Unimportant partnership:
+- very high
+
+Return JSON only.
 """
 
-    response = client.responses.create(
-        model="gpt-5.6-luna",
-        input=prompt
-    )
-
-    result = response.output_text.strip()
-
     try:
+
+        response = client.models.generate_content(
+            model=MODEL,
+            contents=prompt
+        )
+
+        result = response.text.strip()
+
+        # Remove accidental markdown code fences
+        if result.startswith("```"):
+            result = result.replace("```json", "")
+            result = result.replace("```", "")
+            result = result.strip()
+
         return json.loads(result)
 
-    except json.JSONDecodeError:
+    except Exception as e:
+
+        print(f"Gemini error: {e}")
+
         return {
             "publish": False,
             "score": 0,
-            "reason": "Invalid AI response"
-        }
+            "category": "error",
+            "reason": "Gemini request failed"
+            }
